@@ -107,12 +107,13 @@ def main():
     # Closing the network and killing the background processes
     finally:
         print 'Cleaning processes'
-        time.sleep(1)
         print 'Shutting down'
         host_a.cmd('pkill nc6')
         host_a.cmd('pkill tcpdump')
         host_b.cmd('pkill -f "python drop_tail.py"')
+        time.sleep(1)
         net.stop()
+        time.sleep(1)
 
 class MininetTopo(Topo):
 
@@ -161,7 +162,6 @@ def _drop_tail(host, drop, transfer_size):
 
     '''
 
-    host.cmd('modprobe nfnetlink_queue')
     host.cmd('iptables -A FORWARD -i h2-eth0 -o h2-eth1 \
         -p tcp -j NFQUEUE --queue-num 0')
 
@@ -213,7 +213,7 @@ def _start_server(host, port, transfersize):
         raise ValueError('Illegal argument ' + transfersize)
 
     command = 'dd if=/dev/zero bs=1448 count=%d |' \
-    ' nc6 -4 -v -l --rev-transfer -p %d &' % (size, port)
+    ' nc6 -4 -l --rev-transfer -p %d &' % (size, port)
     print  host.cmd(command)
 
 def _record_traffic(host, interface, save_file):
@@ -221,6 +221,7 @@ def _record_traffic(host, interface, save_file):
     ''' Opens a tcpdump instance on the host's interface '''
 
     host.cmd('tcpdump -p -i %s -s 68 -w %s &' % (interface, save_file))
+    time.sleep(1)
 
 if __name__ == '__main__':
 
