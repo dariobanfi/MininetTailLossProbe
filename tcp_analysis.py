@@ -82,30 +82,36 @@ def measure_pcap(savefile):
 	ack = syn + 1
 
 	sequence_numbers = {}
-	first_retransmission = None;
+	retransmitted_packets = {}
+
 	for timestamp, packet in tcp_packets:
 
 		# We ignore ack and syn since their sequence number doesn't change
 		if packet.seq != ack and packet.seq != syn:
 
 			# If the seq number is in the dict, it means that packet
-			# is a duplicate, so a retransmission
+			# is a duplicate, so a retransmission. We save it to the dict
+			# of retransmitted packets
 			if str(packet.seq) in sequence_numbers:
-				first_retransmission =  (timestamp, packet)
-				break
+				retransmitted_packets[str(packet.seq)] = (timestamp, packet)
+				continue
 
 			sequence_numbers[str(packet.seq)] = (timestamp,packet)
 
-	if not first_retransmission:
+	if not retransmitted_packets:
 		retransmission_time_seconds = '0'
 	else:
-		# We get the first packet which was dropped through its 
-		# sequence_number, and we calculate the time until its retransmission
+		# We get the retransmitted packet with the lowest seq number
+		# which will be the retransmission of the  first dropped packet
+
+		first_retransmission = retransmitted_packets[min(retransmitted_packets)]
+
 		retransmission_time =  first_retransmission[0] - sequence_numbers[str(first_retransmission[1].seq)][0]
 		retransmission_time_seconds = str(retransmission_time.total_seconds())
+
 	
 	with open(savefile, 'a') as output:
 		
 		output.write(completion_time_seconds + '\t' + retransmission_time_seconds + '\n')
 		
-main()
+measure_pcap('test.txt')
